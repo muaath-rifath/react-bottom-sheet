@@ -10,6 +10,11 @@
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
+  /* Prevent mobile browser behaviors */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .bottom-sheet-backdrop.open {
@@ -17,7 +22,7 @@
   pointer-events: all;
 }
 
-/* Bottom Sheet Container */
+/* Bottom Sheet Container - Mobile First */
 .bottom-sheet {
   position: fixed;
   left: 0;
@@ -28,43 +33,129 @@
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: 80vh;
-  min-height: 300px;
+  /* Keep basic transition for open/close (not spring motion) */
+  transition: transform 0.3s ease-out;
+  height: 100vh;
+  width: 100%;
+  /* Mobile optimizations */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+  /* Performance optimizations */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .bottom-sheet.open {
-  transform: translateY(0);
+  transform: translateY(50%); /* Default to half-open */
 }
 
-/* Bottom Sheet Header */
+/* Snap point specific styles */
+.bottom-sheet.snap-0 {
+  transform: translateY(100%);
+}
+
+.bottom-sheet.snap-50 {
+  transform: translateY(50%);
+}
+
+.bottom-sheet.snap-85 {
+  transform: translateY(15%);
+}
+
+/* Bottom Sheet Header - Mobile optimized */
 .bottom-sheet-header {
-  padding: 20px 20px 10px;
+  padding: 25px 20px 20px; /* More padding for mobile */
   text-align: center;
   border-bottom: 1px solid #f0f0f0;
+  cursor: grab;
+  user-select: none;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  position: relative;
+  /* Mobile touch optimizations */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  /* Larger minimum touch target for mobile */
+  min-height: 60px;
 }
 
+.bottom-sheet-header:active {
+  cursor: grabbing;
+}
+
+/* Mobile-optimized drag handle */
 .bottom-sheet-handle {
-  width: 40px;
-  height: 4px;
+  width: 50px; /* Larger for mobile */
+  height: 5px; /* Slightly thicker for mobile */
   background: #d0d0d0;
-  border-radius: 2px;
+  border-radius: 3px;
   margin: 0 auto 15px;
-  cursor: grab;
+  /* Keep UI animations (not spring motion) */
+  transition: background 0.2s ease, transform 0.1s ease;
+  /* Mobile touch optimizations */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  position: relative;
+}
+
+/* Larger touch target for mobile */
+.bottom-sheet-handle::before {
+  content: '';
+  position: absolute;
+  top: -15px; /* Larger touch area for mobile */
+  left: -15px;
+  right: -15px;
+  bottom: -15px;
+  background: transparent;
+}
+
+/* Mobile-friendly visual feedback */
+.bottom-sheet-header:active .bottom-sheet-handle {
+  background: #808080;
+  transform: scaleY(1.5); /* More prominent feedback for mobile */
 }
 
 .bottom-sheet-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
+  margin: 0 0 10px 0;
+  font-size: 1.3rem;
   color: #333;
   font-weight: 600;
 }
 
-/* Bottom Sheet Content */
+.snap-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.snap-indicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  transition: background 0.2s ease;
+}
+
+.snap-indicator span.active {
+  background: #667eea;
+}
+
+/* Bottom Sheet Content - Mobile optimized */
 .bottom-sheet-content {
   padding: 20px;
   overflow-y: auto;
-  max-height: calc(80vh - 80px);
+  height: calc(100vh - 120px);
+  background: white;
+  /* Mobile scrolling optimizations */
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .bottom-sheet-content p {
@@ -77,35 +168,106 @@
   text-align: left;
   color: #666;
   margin: 15px 0;
+  padding-left: 20px;
 }
 
 .bottom-sheet-content li {
   margin-bottom: 8px;
 }
 
-.close-btn {
+.content-demo {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.content-demo h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+/* Mobile-optimized buttons */
+.snap-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.snap-buttons button {
   background: #667eea;
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 12px 20px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  margin-top: 20px;
-  transition: background 0.2s ease;
+  /* Keep button animations (not spring motion) */
+  transition: background 0.2s ease, transform 0.1s ease;
+  font-weight: 500;
+  min-width: 120px;
+  /* Mobile touch optimizations */
+  touch-action: manipulation;
 }
 
-.close-btn:hover {
+.snap-buttons button:active {
   background: #5a67d8;
+  transform: scale(0.98); /* Mobile-friendly feedback */
 }
+
+/* Disable transitions during dragging for instant response */
+.bottom-sheet.dragging {
+  transition: none !important;
+}
+
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .bottom-sheet {
-    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .bottom-sheet-header h2 {
+    font-size: 1.2rem;
   }
   
   .bottom-sheet-content {
-    max-height: calc(90vh - 80px);
+    padding: 15px;
+    height: calc(100vh - 100px);
   }
+  
+  .snap-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .snap-buttons button {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* Smooth scrolling for content */
+.bottom-sheet-content {
+  scroll-behavior: smooth;
+}
+
+/* Add a subtle animation when transitioning between snap points */
+.bottom-sheet:not([style*="transform"]) {
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Disable transitions during dragging for better performance */
+.bottom-sheet.dragging {
+  transition: none !important;
+}
+
+/* Improve transform performance */
+.bottom-sheet {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }

@@ -5,6 +5,20 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent pull-to-refresh on mobile browsers */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Global mobile browser behavior fixes */
+html {
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+}
+
+/* Prevent default touch behaviors on mobile that might interfere */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 code {
