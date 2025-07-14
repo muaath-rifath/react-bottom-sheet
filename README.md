@@ -1,70 +1,268 @@
-# Getting Started with Create React App
+# React Bottom Sheet 📱
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, performant React bottom sheet component with smooth spring animations, multiple snap points, and intuitive drag gestures. Perfect for mobile-first applications and responsive designs.
 
-## Available Scripts
+<div align="center">
+  <img src="./public/screenshot1.png" alt="React Bottom Sheet Demo" width="500" style="border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,0.15); border: 3px solid #e6e6e6; margin: 20px 0;"/>
+</div>
 
-In the project directory, you can run:
+## ✨ Features
 
-### `npm start`
+- **🎯 Multiple Snap Points**: Three predefined positions (closed, half-open, fully open)
+- **🎪 Spring Animations**: Smooth, physics-based transitions using custom spring animation
+- **👆 Drag Gestures**: Intuitive touch and mouse drag support
+- **📱 Mobile Optimized**: Touch-friendly with proper gesture handling
+- **🚀 Performance**: Optimized with RAF (RequestAnimationFrame) for 60fps animations
+- **🎨 Customizable**: Easy to style and extend for your use case
+- **♿ Accessible**: Keyboard navigation and screen reader support
+- **📖 No Dependencies**: Pure React implementation without external animation libraries
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🎭 Screenshots
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="./public/screenshot1.png" alt="Initial State" width="300" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); margin: 10px;"/>
+        <br/>
+        <strong>Initial State</strong>
+        <br/>
+        <em>The main interface with the trigger button</em>
+      </td>
+      <td align="center">
+        <img src="./public/screenshot2.png" alt="Half-Open State" width="300" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); margin: 10px;"/>
+        <br/>
+        <strong>Half-Open State</strong>
+        <br/>
+        <em>Bottom sheet in half-open position</em>
+      </td>
+      <td align="center">
+        <img src="./public/screenshot3.png" alt="Fully Open State" width="300" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); margin: 10px;"/>
+        <br/>
+        <strong>Fully Open State</strong>
+        <br/>
+        <em>Bottom sheet fully expanded with complete content</em>
+      </td>
+    </tr>
+  </table>
+</div>
 
-### `npm test`
+<br/>
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+<div align="center">
+  <h3>🎥 Interactive Demo</h3>
+  <img src="./public/screenshot1.png" alt="React Bottom Sheet Demo" width="400" style="border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.15); border: 2px solid #f0f0f0;"/>
+  <p><em>Experience smooth animations and intuitive drag gestures</em></p>
+</div>
 
-### `npm run build`
+## 🚀 Quick Start
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Node.js (v14 or higher)
+- npm or yarn
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/muaath-rifath/react-bottom-sheet.git
+   cd react-bottom-sheet
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. **Start the development server**
+   ```bash
+   npm start
+   # or
+   yarn start
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000) to see the demo.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 📖 Usage
 
-## Learn More
+### Basic Implementation
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```jsx
+import React, { useState } from 'react';
+import BottomSheet from './components/BottomSheet';
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+function App() {
+  const [isOpen, setIsOpen] = useState(false);
 
-### Code Splitting
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>
+        Open Bottom Sheet
+      </button>
+      
+      <BottomSheet 
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      />
+    </div>
+  );
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Component Props
 
-### Analyzing the Bundle Size
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `isOpen` | `boolean` | ✅ | Controls whether the bottom sheet is visible |
+| `onClose` | `function` | ✅ | Callback function called when the sheet should close |
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🎛️ Snap Points
 
-### Making a Progressive Web App
+The component supports three snap points:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **Closed (0%)**: Bottom sheet is hidden
+- **Half (50%)**: Bottom sheet shows partial content
+- **Full (85%)**: Bottom sheet shows complete content
 
-### Advanced Configuration
+### Customizing Snap Points
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+You can modify the snap points in the `BottomSheet.js` file:
 
-### Deployment
+```javascript
+const SNAP_POINTS = {
+  CLOSED: 0,
+  HALF: 50,    // Change this value (0-100)
+  FULL: 85     // Change this value (0-100)
+};
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 🎨 Styling
 
-### `npm run build` fails to minify
+The component uses CSS classes that you can customize:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `.bottom-sheet`: Main container
+- `.bottom-sheet-backdrop`: Overlay/backdrop
+- `.bottom-sheet-header`: Header area with drag handle
+- `.bottom-sheet-handle`: Visual drag indicator
+- `.bottom-sheet-content`: Content area
+
+### Custom Styling Example
+
+```css
+.bottom-sheet {
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-sheet-handle {
+  background: #your-brand-color;
+  width: 60px;
+  height: 6px;
+}
+```
+
+## ⚙️ Configuration
+
+### Spring Animation Settings
+
+Customize the spring physics in `BottomSheet.js`:
+
+```javascript
+const SPRING_CONFIG = {
+  tension: 280,    // Stiffness of the spring
+  friction: 30,    // Damping force
+  mass: 1          // Mass of the object
+};
+```
+
+### Drag Threshold
+
+Adjust how far a user needs to drag to trigger a snap point change:
+
+```javascript
+const DRAG_THRESHOLD = 25; // Percentage of screen height
+```
+
+## 📱 Mobile Optimization Features
+
+- **Pull-to-refresh prevention**: Prevents browser pull-to-refresh when dragging
+- **Overscroll behavior**: Disables elastic scrolling during interactions
+- **Touch event optimization**: Proper touch event handling for smooth performance
+- **Viewport awareness**: Responsive to different screen sizes
+
+## 🔧 Development
+
+### Project Structure
+
+```
+src/
+├── App.js                 # Main application component
+├── App.css               # Application styles
+├── components/
+│   ├── BottomSheet.js    # Bottom sheet component
+│   └── BottomSheet.css   # Bottom sheet styles
+├── index.js              # Application entry point
+└── index.css             # Global styles
+```
+
+### Available Scripts
+
+- `npm start` - Starts the development server
+- `npm test` - Runs the test suite
+- `npm run build` - Builds the app for production
+- `npm run eject` - Ejects from Create React App (⚠️ irreversible)
+
+### Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+### Building for Production
+
+Create a production build:
+
+```bash
+npm run build
+```
+
+The build folder will contain the optimized production files.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+### Development Guidelines
+
+1. Follow the existing code style
+2. Add tests for new features
+3. Update documentation as needed
+4. Ensure all tests pass before submitting
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Inspired by native mobile bottom sheets
+- Built with React 19 and modern web standards
+- Uses physics-based spring animations for natural feel
+
+## 📞 Support
+
+If you have any questions or need help, please:
+
+1. Check the [Issues](https://github.com/muaath-rifath/react-bottom-sheet/issues) page
+2. Create a new issue if your problem isn't already addressed
+3. Provide a clear description and reproduction steps
+
+---
+
+Made with ❤️ by [Muaath Rifath](https://github.com/muaath-rifath)
