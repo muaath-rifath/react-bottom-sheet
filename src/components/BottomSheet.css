@@ -33,8 +33,8 @@
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   transform: translateY(100%);
-  /* Keep basic transition for open/close (not spring motion) */
-  transition: transform 0.3s ease-out;
+  /* Add CSS transition for opening animation only */
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   height: 100vh;
   width: 100%;
   /* Mobile optimizations */
@@ -49,22 +49,17 @@
   -webkit-backface-visibility: hidden;
 }
 
-.bottom-sheet.open {
-  transform: translateY(50%); /* Default to half-open */
+/* Disable transitions during dragging - spring animation takes over */
+.bottom-sheet.dragging {
+  transition: none !important;
 }
 
-/* Snap point specific styles */
-.bottom-sheet.snap-0 {
-  transform: translateY(100%);
+/* Disable transitions during spring animation */
+.bottom-sheet.spring-animating {
+  transition: none !important;
 }
 
-.bottom-sheet.snap-50 {
-  transform: translateY(50%);
-}
-
-.bottom-sheet.snap-85 {
-  transform: translateY(15%);
-}
+/* Spring animations handle all positioning - no CSS transitions needed */
 
 /* Bottom Sheet Header - Mobile optimized */
 .bottom-sheet-header {
@@ -255,15 +250,8 @@
   scroll-behavior: smooth;
 }
 
-/* Add a subtle animation when transitioning between snap points */
-.bottom-sheet:not([style*="transform"]) {
-  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-/* Disable transitions during dragging for better performance */
-.bottom-sheet.dragging {
-  transition: none !important;
-}
+/* Spring animations handle all transitions - no CSS transitions needed */
+/* Transforms are handled by JavaScript spring physics */
 
 /* Improve transform performance */
 .bottom-sheet {

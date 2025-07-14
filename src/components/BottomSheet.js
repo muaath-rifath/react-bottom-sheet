@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './BottomSheet.css';
 
 // Snap point definitions
@@ -6,6 +6,13 @@ const SNAP_POINTS = {
   CLOSED: 0,
   HALF: 50,
   FULL: 85
+};
+
+// Spring animation configuration
+const SPRING_CONFIG = {
+  tension: 280,
+  friction: 30,
+  mass: 1
 };
 
 const BottomSheet = ({ isOpen, onClose }) => {
@@ -18,22 +25,135 @@ const BottomSheet = ({ isOpen, onClose }) => {
   const currentXRef = useRef(0);
   const isDraggingRef = useRef(false);
   const currentSnapPointRef = useRef(SNAP_POINTS.CLOSED);
+  
+  // Spring animation refs
+  const animationFrameRef = useRef(null);
+  const currentPositionRef = useRef(0);
+  const velocityRef = useRef(0);
+  const targetPositionRef = useRef(0);
+  const isAnimatingRef = useRef(false);
+  const isInitialOpenRef = useRef(false);
 
-  // Keep refs in sync with state
+  // Spring animation function
+  const animateToPosition = useCallback((targetPosition) => {
+    if (isAnimatingRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    isAnimatingRef.current = true;
+    targetPositionRef.current = targetPosition;
+    
+    const animate = () => {
+      // Use much gentler spring settings for opening animation to create visible 0.3s duration
+      const springConfig = isInitialOpenRef.current 
+        ? { tension: 120, friction: 14, mass: 1 } // Much gentler for visible opening animation
+        : SPRING_CONFIG; // Normal settings for other animations
+      
+      const { tension, friction, mass } = springConfig;
+      
+      // Spring physics calculations
+      const displacement = currentPositionRef.current - targetPositionRef.current;
+      const springForce = -tension * displacement;
+      const dampingForce = -friction * velocityRef.current;
+      const acceleration = (springForce + dampingForce) / mass;
+      
+      // Update velocity and position
+      velocityRef.current += acceleration * 0.016; // 60fps
+      currentPositionRef.current += velocityRef.current * 0.016;
+      
+      // Apply the transform
+      if (bottomSheetRef.current && !isDraggingRef.current) {
+        bottomSheetRef.current.style.transform = `translateY(${100 - currentPositionRef.current}%)`;
+      }
+      
+      // Check if animation should continue (spring has settled)
+      const isSettled = Math.abs(displacement) < 0.1 && Math.abs(velocityRef.current) < 0.1;
+      
+      if (!isSettled && isAnimatingRef.current) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        // Animation finished, snap to exact position
+        isAnimatingRef.current = false;
+        currentPositionRef.current = targetPositionRef.current;
+        velocityRef.current = 0;
+        if (bottomSheetRef.current && !isDraggingRef.current) {
+          bottomSheetRef.current.style.transform = `translateY(${100 - targetPositionRef.current}%)`;
+        }
+      }
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  // Clean up animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  // Keep refs in sync with state and animate to new positions
   useEffect(() => {
     currentSnapPointRef.current = snapPoint;
-  }, [snapPoint]);
+    currentPositionRef.current = snapPoint;
+    if (!isDraggingRef.current) {
+      animateToPosition(snapPoint);
+    }
+  }, [snapPoint, animateToPosition]);
 
   useEffect(() => {
     if (isOpen) {
       setIsVisible(true);
-      setSnapPoint(SNAP_POINTS.HALF);
+      isInitialOpenRef.current = true;
+      
+      // Set initial position at bottom
+      if (bottomSheetRef.current) {
+        bottomSheetRef.current.style.transform = 'translateY(100%)';
+        // Ensure CSS transition is enabled for opening
+        bottomSheetRef.current.classList.remove('spring-animating');
+        bottomSheetRef.current.classList.remove('dragging');
+      }
+      
+      // Use CSS transition for the opening animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (bottomSheetRef.current) {
+            // Animate to half position using CSS transition
+            bottomSheetRef.current.style.transform = 'translateY(50%)';
+          }
+          setSnapPoint(SNAP_POINTS.HALF);
+          
+          // After opening animation, switch to spring animation
+          setTimeout(() => {
+            isInitialOpenRef.current = false;
+            if (bottomSheetRef.current) {
+              bottomSheetRef.current.classList.add('spring-animating');
+            }
+            currentPositionRef.current = SNAP_POINTS.HALF;
+          }, 300); // Match CSS transition duration
+        });
+      });
     } else {
+      isInitialOpenRef.current = false;
       setSnapPoint(SNAP_POINTS.CLOSED);
       const timer = setTimeout(() => setIsVisible(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
+
+  // Set initial position when component mounts
+  useEffect(() => {
+    if (bottomSheetRef.current && isVisible) {
+      if (isOpen && snapPoint === SNAP_POINTS.CLOSED) {
+        // When opening, explicitly start from bottom (fully closed position)
+        bottomSheetRef.current.style.transform = `translateY(100%)`;
+        currentPositionRef.current = 0; // Start at 0 (closed position)
+        velocityRef.current = 0; // Reset velocity
+      }
+    }
+  }, [isVisible, isOpen, snapPoint]);
 
   // Prevent pull-to-refresh and overscroll when bottom sheet is open
   useEffect(() => {
@@ -75,6 +195,12 @@ const BottomSheet = ({ isOpen, onClose }) => {
   const handleDragMove = (e) => {
     if (!isDraggingRef.current) return;
     
+    // Stop any ongoing spring animation
+    if (isAnimatingRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      isAnimatingRef.current = false;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
     
@@ -111,6 +237,10 @@ const BottomSheet = ({ isOpen, onClose }) => {
       const overdragLimit = 15;
       newPosition = Math.max(-overdragLimit, Math.min(SNAP_POINTS.FULL + overdragLimit, newPosition));
       
+      // Update position refs for spring animation
+      currentPositionRef.current = newPosition;
+      velocityRef.current = 0; // Reset velocity during drag
+      
       // Apply position immediately
       if (bottomSheetRef.current) {
         bottomSheetRef.current.style.transform = `translateY(${100 - newPosition}%)`;
@@ -134,29 +264,59 @@ const BottomSheet = ({ isOpen, onClose }) => {
     const isValidVerticalDrag = absDeltaY > absDeltaX * 0.5 || absDeltaY > 20;
     
     if (isValidVerticalDrag) {
-      // Process snap based on vertical movement
+      // Calculate how much the user dragged as a percentage of screen height
       const windowHeight = window.innerHeight;
       const dragPercentage = (deltaY / windowHeight) * 100;
-      let newSnapPoint = currentSnapPointRef.current - dragPercentage;
       
-      // Find closest snap point
-      const snapPoints = Object.values(SNAP_POINTS);
-      const closestSnapPoint = snapPoints.reduce((prev, curr) => 
-        Math.abs(curr - newSnapPoint) < Math.abs(prev - newSnapPoint) ? curr : prev
-      );
+      // Define threshold for moving to next snap point (25% of screen height)
+      const DRAG_THRESHOLD = 25;
       
-      // Handle closing or snap to position
-      if (closestSnapPoint === SNAP_POINTS.CLOSED) {
-        onClose();
-      } else {
-        setSnapPoint(closestSnapPoint);
+      // Determine target snap point based on drag direction and threshold
+      let targetSnapPoint = currentSnapPointRef.current;
+      
+      if (Math.abs(dragPercentage) > DRAG_THRESHOLD) {
+        // User dragged far enough to move to next snap point
+        if (dragPercentage > 0) {
+          // Dragging down (closing direction)
+          if (currentSnapPointRef.current === SNAP_POINTS.FULL) {
+            targetSnapPoint = SNAP_POINTS.HALF;
+          } else if (currentSnapPointRef.current === SNAP_POINTS.HALF) {
+            targetSnapPoint = SNAP_POINTS.CLOSED;
+          }
+        } else {
+          // Dragging up (opening direction)
+          if (currentSnapPointRef.current === SNAP_POINTS.CLOSED) {
+            targetSnapPoint = SNAP_POINTS.HALF;
+          } else if (currentSnapPointRef.current === SNAP_POINTS.HALF) {
+            targetSnapPoint = SNAP_POINTS.FULL;
+          }
+        }
       }
+      // If dragPercentage < DRAG_THRESHOLD, targetSnapPoint remains the same (spring back)
+      
+      // Calculate velocity for spring animation (based on drag speed)
+      const dragTime = 16; // Approximate time between frames
+      velocityRef.current = (deltaY / windowHeight * 100) / dragTime;
+      
+      // Handle closing or snap to position with spring animation
+      if (targetSnapPoint === SNAP_POINTS.CLOSED) {
+        onClose();
+      } else if (targetSnapPoint !== currentSnapPointRef.current) {
+        // Moving to a different snap point
+        setSnapPoint(targetSnapPoint);
+      } else {
+        // Staying at the same snap point, force spring back to exact position
+        animateToPosition(targetSnapPoint);
+      }
+    } else {
+      // No valid drag, spring back to current position
+      animateToPosition(currentSnapPointRef.current);
     }
     
-    // Re-enable CSS transitions
+    // Remove any inline styles that override spring animation
     if (bottomSheetRef.current) {
       bottomSheetRef.current.style.transition = '';
-      bottomSheetRef.current.style.transform = '';
+      // Don't remove transform here - let spring animation handle it
     }
     
     // Clean up event listeners
@@ -171,6 +331,18 @@ const BottomSheet = ({ isOpen, onClose }) => {
   const handleDragStart = (e) => {
     // Set drag state immediately using ref (synchronous)
     isDraggingRef.current = true;
+    
+    // Stop any ongoing spring animation
+    if (isAnimatingRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      isAnimatingRef.current = false;
+    }
+    
+    // Disable CSS transitions and enable spring animation
+    if (bottomSheetRef.current) {
+      bottomSheetRef.current.classList.add('dragging');
+      bottomSheetRef.current.classList.add('spring-animating');
+    }
     
     // Get coordinates
     let clientY, clientX;
@@ -193,7 +365,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Disable CSS transitions immediately
+    // Disable any CSS transitions (spring animation takes over)
     if (bottomSheetRef.current) {
       bottomSheetRef.current.style.transition = 'none';
     }
@@ -282,9 +454,9 @@ const BottomSheet = ({ isOpen, onClose }) => {
       {/* Bottom Sheet Content */}
       <div 
         ref={bottomSheetRef}
-        className={`bottom-sheet ${isOpen ? 'open' : ''} ${isDraggingRef.current ? 'dragging' : ''} snap-${snapPoint}`}
+        className={`bottom-sheet ${isOpen ? 'open' : ''} ${isDraggingRef.current ? 'dragging' : ''} ${isAnimatingRef.current ? 'spring-animating' : ''} snap-${snapPoint}`}
         style={{
-          transform: `translateY(${100 - snapPoint}%)`
+          // Don't set transform here - animations handle it completely
         }}
       >
         <div 
