@@ -32,6 +32,38 @@
   opacity: 0.9;
 }
 
+/* Tablet Styles */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .App-header {
+    padding: 40px;
+  }
+  
+  .App-header h1 {
+    font-size: 3rem;
+  }
+  
+  .App-header p {
+    font-size: 1.2rem;
+    max-width: 700px;
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1025px) {
+  .App-header {
+    padding: 60px;
+  }
+  
+  .App-header h1 {
+    font-size: 3.5rem;
+  }
+  
+  .App-header p {
+    font-size: 1.3rem;
+    max-width: 800px;
+  }
+}
+
 .open-bottom-sheet-btn {
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -50,4 +82,82 @@
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Tablet Button */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .open-bottom-sheet-btn {
+    padding: 18px 36px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Desktop Button */
+@media (min-width: 1025px) {
+  .open-bottom-sheet-btn {
+    padding: 20px 40px;
+    font-size: 1.3rem;
+  }
+  
+  .open-bottom-sheet-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* Instructions Container */
+.instructions-container {
+  margin-top: 40px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+.instructions-container h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.2rem;
+}
+
+.instructions-container ul {
+  text-align: left;
+  margin: 0;
+  padding: 0 0 0 20px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Tablet Instructions */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .instructions-container {
+    margin-top: 50px;
+    padding: 25px;
+    max-width: 600px;
+  }
+  
+  .instructions-container h3 {
+    font-size: 1.3rem;
+  }
+  
+  .instructions-container ul {
+    font-size: 1rem;
+  }
+}
+
+/* Desktop Instructions */
+@media (min-width: 1025px) {
+  .instructions-container {
+    margin-top: 60px;
+    padding: 30px;
+    max-width: 700px;
+    border-radius: 16px;
+  }
+  
+  .instructions-container h3 {
+    font-size: 1.4rem;
+  }
+  
+  .instructions-container ul {
+    font-size: 1.1rem;
+  }
 }

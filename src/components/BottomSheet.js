@@ -8,6 +8,18 @@ const SNAP_POINTS = {
   FULL: 85
 };
 
+// Responsive snap points for different screen sizes
+const getResponsiveSnapPoints = (isMobile, isTablet) => {
+  if (isMobile) {
+    return { CLOSED: 0, HALF: 50, FULL: 85 };
+  } else if (isTablet) {
+    return { CLOSED: 0, HALF: 40, FULL: 75 };
+  } else {
+    // Desktop
+    return { CLOSED: 0, HALF: 35, FULL: 70 };
+  }
+};
+
 // Spring animation configuration
 const SPRING_CONFIG = {
   tension: 280,
@@ -18,6 +30,9 @@ const SPRING_CONFIG = {
 const BottomSheet = ({ isOpen, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [snapPoint, setSnapPoint] = useState(SNAP_POINTS.CLOSED);
+  const [isMobile, setIsMobile] = useState(true);
+  const [isTablet, setIsTablet] = useState(false);
+  const [currentSnapPoints, setCurrentSnapPoints] = useState(SNAP_POINTS);
   const bottomSheetRef = useRef(null);
   const startYRef = useRef(0);
   const startXRef = useRef(0);
@@ -33,6 +48,33 @@ const BottomSheet = ({ isOpen, onClose }) => {
   const targetPositionRef = useRef(0);
   const isAnimatingRef = useRef(false);
   const isInitialOpenRef = useRef(false);
+
+  // Detect screen size and update responsive state
+  useEffect(() => {
+    const updateScreenSize = () => {
+      const width = window.innerWidth;
+      const newIsMobile = width < 768;
+      const newIsTablet = width >= 768 && width <= 1024;
+      
+      setIsMobile(newIsMobile);
+      setIsTablet(newIsTablet);
+      setCurrentSnapPoints(getResponsiveSnapPoints(newIsMobile, newIsTablet));
+    };
+
+    updateScreenSize();
+    window.addEventListener('resize', updateScreenSize);
+    return () => window.removeEventListener('resize', updateScreenSize);
+  }, []);
+
+  // Get responsive transform based on screen size
+  const getResponsiveTransform = useCallback((position) => {
+    if (isMobile) {
+      return `translateY(${100 - position}%)`;
+    } else {
+      // For tablet and desktop, maintain horizontal centering
+      return `translateX(-50%) translateY(${100 - position}%)`;
+    }
+  }, [isMobile]);
 
   // Spring animation function
   const animateToPosition = useCallback((targetPosition) => {
@@ -63,7 +105,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
       
       // Apply the transform
       if (bottomSheetRef.current && !isDraggingRef.current) {
-        bottomSheetRef.current.style.transform = `translateY(${100 - currentPositionRef.current}%)`;
+        bottomSheetRef.current.style.transform = getResponsiveTransform(currentPositionRef.current);
       }
       
       // Check if animation should continue (spring has settled)
@@ -77,13 +119,13 @@ const BottomSheet = ({ isOpen, onClose }) => {
         currentPositionRef.current = targetPositionRef.current;
         velocityRef.current = 0;
         if (bottomSheetRef.current && !isDraggingRef.current) {
-          bottomSheetRef.current.style.transform = `translateY(${100 - targetPositionRef.current}%)`;
+          bottomSheetRef.current.style.transform = getResponsiveTransform(targetPositionRef.current);
         }
       }
     };
     
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, []);
+  }, [getResponsiveTransform]);
 
   // Clean up animation on unmount
   useEffect(() => {
@@ -110,7 +152,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
       
       // Set initial position at bottom
       if (bottomSheetRef.current) {
-        bottomSheetRef.current.style.transform = 'translateY(100%)';
+        bottomSheetRef.current.style.transform = getResponsiveTransform(0);
         // Ensure CSS transition is enabled for opening
         bottomSheetRef.current.classList.remove('spring-animating');
         bottomSheetRef.current.classList.remove('dragging');
@@ -121,9 +163,9 @@ const BottomSheet = ({ isOpen, onClose }) => {
         requestAnimationFrame(() => {
           if (bottomSheetRef.current) {
             // Animate to half position using CSS transition
-            bottomSheetRef.current.style.transform = 'translateY(50%)';
+            bottomSheetRef.current.style.transform = getResponsiveTransform(SNAP_POINTS.HALF);
           }
-          setSnapPoint(SNAP_POINTS.HALF);
+          setSnapPoint(currentSnapPoints.HALF);
           
           // After opening animation, switch to spring animation
           setTimeout(() => {
@@ -131,29 +173,29 @@ const BottomSheet = ({ isOpen, onClose }) => {
             if (bottomSheetRef.current) {
               bottomSheetRef.current.classList.add('spring-animating');
             }
-            currentPositionRef.current = SNAP_POINTS.HALF;
+            currentPositionRef.current = currentSnapPoints.HALF;
           }, 300); // Match CSS transition duration
         });
       });
     } else {
       isInitialOpenRef.current = false;
-      setSnapPoint(SNAP_POINTS.CLOSED);
+      setSnapPoint(currentSnapPoints.CLOSED);
       const timer = setTimeout(() => setIsVisible(false), 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, currentSnapPoints, getResponsiveTransform]);
 
   // Set initial position when component mounts
   useEffect(() => {
     if (bottomSheetRef.current && isVisible) {
-      if (isOpen && snapPoint === SNAP_POINTS.CLOSED) {
+      if (isOpen && snapPoint === currentSnapPoints.CLOSED) {
         // When opening, explicitly start from bottom (fully closed position)
-        bottomSheetRef.current.style.transform = `translateY(100%)`;
+        bottomSheetRef.current.style.transform = getResponsiveTransform(0);
         currentPositionRef.current = 0; // Start at 0 (closed position)
         velocityRef.current = 0; // Reset velocity
       }
     }
-  }, [isVisible, isOpen, snapPoint]);
+  }, [isVisible, isOpen, snapPoint, getResponsiveTransform, currentSnapPoints]);
 
   // Prevent pull-to-refresh and overscroll when bottom sheet is open
   useEffect(() => {
@@ -161,7 +203,6 @@ const BottomSheet = ({ isOpen, onClose }) => {
 
     const preventPullToRefresh = (e) => {
       if (window.scrollY === 0 && e.touches && e.touches.length === 1) {
-        const touch = e.touches[0];
         const target = e.target;
         const isOnBottomSheet = bottomSheetRef.current && 
           (bottomSheetRef.current.contains(target) || bottomSheetRef.current === target);
@@ -235,7 +276,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
       
       // Constrain to bounds with overdrag allowance
       const overdragLimit = 15;
-      newPosition = Math.max(-overdragLimit, Math.min(SNAP_POINTS.FULL + overdragLimit, newPosition));
+      newPosition = Math.max(-overdragLimit, Math.min(currentSnapPoints.FULL + overdragLimit, newPosition));
       
       // Update position refs for spring animation
       currentPositionRef.current = newPosition;
@@ -243,7 +284,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
       
       // Apply position immediately
       if (bottomSheetRef.current) {
-        bottomSheetRef.current.style.transform = `translateY(${100 - newPosition}%)`;
+        bottomSheetRef.current.style.transform = getResponsiveTransform(newPosition);
       }
     }
   };
@@ -278,17 +319,17 @@ const BottomSheet = ({ isOpen, onClose }) => {
         // User dragged far enough to move to next snap point
         if (dragPercentage > 0) {
           // Dragging down (closing direction)
-          if (currentSnapPointRef.current === SNAP_POINTS.FULL) {
-            targetSnapPoint = SNAP_POINTS.HALF;
-          } else if (currentSnapPointRef.current === SNAP_POINTS.HALF) {
-            targetSnapPoint = SNAP_POINTS.CLOSED;
+          if (currentSnapPointRef.current === currentSnapPoints.FULL) {
+            targetSnapPoint = currentSnapPoints.HALF;
+          } else if (currentSnapPointRef.current === currentSnapPoints.HALF) {
+            targetSnapPoint = currentSnapPoints.CLOSED;
           }
         } else {
           // Dragging up (opening direction)
-          if (currentSnapPointRef.current === SNAP_POINTS.CLOSED) {
-            targetSnapPoint = SNAP_POINTS.HALF;
-          } else if (currentSnapPointRef.current === SNAP_POINTS.HALF) {
-            targetSnapPoint = SNAP_POINTS.FULL;
+          if (currentSnapPointRef.current === currentSnapPoints.CLOSED) {
+            targetSnapPoint = currentSnapPoints.HALF;
+          } else if (currentSnapPointRef.current === currentSnapPoints.HALF) {
+            targetSnapPoint = currentSnapPoints.FULL;
           }
         }
       }
@@ -299,7 +340,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
       velocityRef.current = (deltaY / windowHeight * 100) / dragTime;
       
       // Handle closing or snap to position with spring animation
-      if (targetSnapPoint === SNAP_POINTS.CLOSED) {
+      if (targetSnapPoint === currentSnapPoints.CLOSED) {
         onClose();
       } else if (targetSnapPoint !== currentSnapPointRef.current) {
         // Moving to a different snap point
@@ -383,7 +424,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
 
   // Handle snap point buttons
   const handleSnapTo = (point) => {
-    if (point === SNAP_POINTS.CLOSED) {
+    if (point === currentSnapPoints.CLOSED) {
       onClose();
     } else {
       setSnapPoint(point);
@@ -393,21 +434,21 @@ const BottomSheet = ({ isOpen, onClose }) => {
   // Get content based on snap point
   const getContentForSnapPoint = () => {
     switch (snapPoint) {
-      case SNAP_POINTS.HALF:
+      case currentSnapPoints.HALF:
         return (
           <div className="bottom-sheet-content">
             <p>Half-open view - Some content is visible.</p>
             <div className="snap-buttons">
-              <button onClick={() => handleSnapTo(SNAP_POINTS.FULL)}>
+              <button onClick={() => handleSnapTo(currentSnapPoints.FULL)}>
                 Expand to Full
               </button>
-              <button onClick={() => handleSnapTo(SNAP_POINTS.CLOSED)}>
+              <button onClick={() => handleSnapTo(currentSnapPoints.CLOSED)}>
                 Close
               </button>
             </div>
           </div>
         );
-      case SNAP_POINTS.FULL:
+      case currentSnapPoints.FULL:
         return (
           <div className="bottom-sheet-content">
             <p>Fully open view - All content is visible.</p>
@@ -427,10 +468,10 @@ const BottomSheet = ({ isOpen, onClose }) => {
             </div>
             
             <div className="snap-buttons">
-              <button onClick={() => handleSnapTo(SNAP_POINTS.HALF)}>
+              <button onClick={() => handleSnapTo(currentSnapPoints.HALF)}>
                 Minimize to Half
               </button>
-              <button onClick={() => handleSnapTo(SNAP_POINTS.CLOSED)}>
+              <button onClick={() => handleSnapTo(currentSnapPoints.CLOSED)}>
                 Close
               </button>
             </div>
@@ -470,7 +511,7 @@ const BottomSheet = ({ isOpen, onClose }) => {
           }}
         >
           <div className="bottom-sheet-handle" />
-          <h2>Bottom Sheet - {snapPoint === SNAP_POINTS.HALF ? 'Half Open' : 'Fully Open'}</h2>
+          <h2>Bottom Sheet - {snapPoint === currentSnapPoints.HALF ? 'Half Open' : 'Fully Open'}</h2>
         </div>
         
         {getContentForSnapPoint()}
